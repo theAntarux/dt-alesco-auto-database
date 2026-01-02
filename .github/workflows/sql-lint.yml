@@ -21,7 +21,6 @@ jobs:
         uses: yu-iskw/action-sqlfluff@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          reporter: github-pr-review
           sqlfluff_command: lint
           config: "${{ github.workspace }}/.sqlfluff"
           paths: "sql"
