@@ -1,9 +1,8 @@
 <div align="center">
-    <p style="font-size: 35px; margin: 0; font-weight: bold">
-        dt-alesco-auto-database
-    </p>
-    <p style="font-size: 20px; margin: 0; font-style: italic">
+    <p>
+        <h1> dt-alesco-auto-database </h1>
         DT - FINAL PROJECT
+        <br>
     </p>
     <a style="margin: 0" href="https://github.com/theAntarux/dt-alesco-auto-database/actions">
         <img src="https://github.com/theAntarux/dt-alesco-auto-database/actions/workflows/sql-lint.yml/badge.svg" alt="SQL Lint"/>
