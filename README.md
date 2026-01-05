@@ -59,7 +59,137 @@ Lorem ipsum dolor sit amet consectetur adipiscing elit. Quisque faucibus ex sapi
 <br/>
 
 ## 4. Vizualizácia dát
-Lorem ipsum dolor sit amet consectetur adipiscing elit. Quisque faucibus ex sapien vitae pellentesque sem placerat. In id cursus mi pretium tellus duis convallis. Tempus leo eu aenean sed diam urna tempor. Pulvinar vivamus fringilla lacus nec metus bibendum egestas. Iaculis massa nisl malesuada lacinia integer nunc posuere. Ut hendrerit semper vel class aptent taciti sociosqu. Ad litora torquent per conubia nostra inceptos himenaeos.
+V tejto časti prezentujeme 6 vizualizácií, ktoré využívajú výpočtové metriky z faktovej tabuľky fact_vehicle_ownership na poskytnutie doležitých informácií.
+
+### Vizualizácia 1: TOP 10 štátov podľa počtu vozidiel
+
+```sql
+SELECT 
+    a.STATE,
+    COUNT(*) AS VEHICLE_COUNT,
+    ROUND((COUNT(*) / MAX(f.TOTAL_VEHICLES_GLOBAL)) * 100, 2) AS MARKET_SHARE_PCT
+FROM fact_vehicle_ownership f
+JOIN dim_address a ON f.DIM_ADDRESS_KEY = a.ADDRESS_KEY
+GROUP BY a.STATE 
+ORDER BY VEHICLE_COUNT DESC LIMIT 10;
+```
+#### Ktoré štáty maju najväčŚie zastúpenie v databáze a aký je ich percentuálny podiel?
+Graf ukazuje dominanciu štátu Texas (TX) s trhovým podielom cez 16%, nasledne je Flodida (FL) s 12%. Tieto informácie umožňujú efektívne rozdelenie regionálneho marketingu do lokalít s najvyššou hustotou vozidiel.
+
+<div align="center">
+    <img src="./img/visualization_001.png" alt="ERD Model" width="750">
+    <br>
+    <em>Obrázok 3: Vizualizácia 1</em>
+</div>
+<br/>
+
+### Vizualizácia 2: TOP 5 výrobcov
+
+```sql
+SELECT 
+    v.AUTO_MANUFACTURER_CODE,
+    COUNT(*) AS VEHICLE_COUNT
+FROM fact_vehicle_ownership f
+JOIN dim_vehicle v ON f.DIM_VEHICLE_KEY = v.VEHICLE_KEY
+GROUP BY v.AUTO_MANUFACTURER_CODE LIMIT 5;
+```
+
+#### Ktoré značky výrobcov sú najrozšírenejšie?
+Najúspešnejším výrobcom je kód "L" s takmer 12 000 vozidlami. Tento prehľad pomáha pri hladaní značky, ktorá je najrozšírenejšia.
+
+<div align="center">
+    <img src="./img/visualization_002.png" alt="ERD Model" width="750">
+    <br>
+    <em>Obrázok 4: Vizualizácia 2</em>
+</div>
+<br/>
+
+### Vizualizácia 3: Distribúcia typu paliva
+
+```sql
+SELECT 
+    v.AUTO_MANUFACTURER_CODE,
+    COUNT(*) AS VEHICLE_COUNT
+FROM fact_vehicle_ownership f
+JOIN dim_vehicle v ON f.DIM_VEHICLE_KEY = v.VEHICLE_KEY
+GROUP BY v.AUTO_MANUFACTURER_CODE LIMIT 5;
+```
+
+#### Ktorá pohonná hmota je najrozšírenejšia?
+Drvivá väčšina využíva benzín (kód "G"), čo predstavuje takmer celú plochu koláčového grafu. Naznačuje nízku adopciu elektromobility.
+
+<div align="center">
+    <img src="./img/visualization_003.png" alt="ERD Model" width="750">
+    <br>
+    <em>Obrázok 5: Vizualizácia 3</em>
+</div>
+<br/>
+
+### Vizualizácia 4: vlastníctvo vozidiel podľa pohlavia
+
+```sql
+SELECT 
+    p.GENDER,
+    COUNT(*) AS VEHICLE_COUNT
+FROM fact_vehicle_ownership f 
+JOIN dim_person p ON f.DIM_PERSON_KEY = p.PERSON_KEY
+GROUP BY p.GENDER;
+```
+
+#### Existujú rozdiely vo vlastníctve vozidiel medzi mužmi a ženami?
+Muži (M) vlastnia približne o 50% viac vozidiel ako ženy (F). Výraznú časť tvoria aj neznáme hodnoty (null). 
+
+<div align="center">
+    <img src="./img/visualization_004.png" alt="ERD Model" width="750">
+    <br>
+    <em>Obrázok 6: Vizualizácia 4</em>
+</div>
+<br/>
+
+### Vizualizácia 5: distribúcia vozidiel podľa roku výroby
+
+```sql
+SELECT
+    v.AUTO_YEAR,
+    COUNT(*) AS VEHICLE_COUNT
+FROM fact_vehicle_ownership f
+JOIN dim_vehicle v ON f.DIM_VEHICLE_KEY = v.VEHICLE_KEY 
+WHERE v.AUTO_YEAR IS NOT NULL
+GROUP BY v.AUTO_YEAR ORDER BY v.AUTO_YEAR;
+```
+
+#### Aký je vekový trend aut?
+Čiarový graf zobrazuje dva cykly obnovy (okolo rokov 1999 a 2008). Prudký pokles po roku 2018.
+
+<div align="center">
+    <img src="./img/visualization_005.png" alt="ERD Model" width="750">
+    <br>
+    <em>Obrázok 7: Vizualizácia 5</em>
+</div>
+<br/>
+
+### Vizualizácia 6: koncentrácia vozidiel podľa hodnoty domáceho trhu
+
+```sql
+SELECT 
+    h.HOME_MARKET_VALUE,
+    AVG(f.VEHICLE_RANK_IN_HOUSEHOLD) AS AVG_CARS_PER_HOUSEHOLD
+FROM fact_vehicle_ownership f
+JOIN dim_household h ON f.DIM_HOUSEHOLD_KEY = h.HOUSEHOLD_KEY 
+WHERE h.HOME_MARKET_VALUE IS NOT NULL
+GROUP BY h.HOME_MARKET_VALUE
+ORDER BY h.HOME_MARKET_VALUE;
+```
+
+#### Vlastnia majitalia drahších nehnuteľností v priemere viac vozidiel?
+Tento graf využíva window funkciu RANK() na určenie poradového čísla auta v domácnosti. Ukazuje to nadprimerný počet vozidiel na jednu rodinu.
+
+<div align="center">
+    <img src="./img/visualization_006.png" alt="ERD Model" width="750">
+    <br>
+    <em>Obrázok 8: Vizualizácia 6</em>
+</div>
+<br/>
 
 <br/>
 
