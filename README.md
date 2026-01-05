@@ -78,8 +78,95 @@ Tabuľka faktov obsahuje nasledujúcich 7 dimenzií schémy:
 <br/>
 
 ## 3. ELT proces v Snowflake
-Lorem ipsum dolor sit amet consectetur adipiscing elit. Quisque faucibus ex sapien vitae pellentesque sem placerat. In id cursus mi pretium tellus duis convallis. Tempus leo eu aenean sed diam urna tempor. Pulvinar vivamus fringilla lacus nec metus bibendum egestas. Iaculis massa nisl malesuada lacinia integer nunc posuere. Ut hendrerit semper vel class aptent taciti sociosqu. Ad litora torquent per conubia nostra inceptos himenaeos.
+Spracovanie dát v tomto projekte sleduje modernú schému ELT (Extract, Load, Transform). Umožňuje vykonávať komplexné transformácie priamo v databáze až po ich úspešnom načítaní. Celý proces je spravený tak, aby premenil surové dáta na hviezdicovú schému.
 
+### Extract
+Zdrojové údaje boli získané zo Snowflake Marketplace od poskytovateľa Alesco Data. Prvým krokom bolo vytvoriť tzv. staging vrstvy (v našom prípade iba jednu - alesco_auto_staging). Tento proces nám zabezpečuje stabilitu pre transformáciu dát.
+<br>**Zdrojová databáza**: [**Alesco Auto Database**](https://app.snowflake.com/marketplace/listing/GZ1M6ZQEKHL)
+<br>**Zdrojová schéma**: PUBLIC
+<br>**Zdrojový pohľad**: AUTO_DATA_SAMPLE_VIEW
+<br> **SQL príkaz pre vytvorenie staging tabuľky**:
+```sql
+-- 2. STAGING - import surových dát 
+CREATE OR REPLACE TABLE alesco_auto_staging AS 
+SELECT * FROM ALESCO_AUTO_DATABASE_SAMPLE.PUBLIC.AUTO_DATA_SAMPLE_VIEW;
+
+-- kontrola
+SELECT * FROM alesco_auto_staging LIMIT 10;
+DESCRIBE TABLE alesco_auto_staging;
+```
+Vysvetlenie: Príkaz Vytvoré fyzickú kópiu dát v našom úložisku, čím zabezpečíme, že naše transformácie nebudú ovplyvnené zmenami v marketplace zdroji a budeme mať rýchly prístup k surovým dátam.
+
+
+### Load
+Fáza načítania spočívala vo vytváraný viacdimenzionálnej architektúry(**Star Schema**). Dáta sú rozdelené do dimenzií a faktovej tabuľky. Toto zahrňalo dva hlavné kroky:
+1. **Tvorba dimenzií**: Z pôvodnej tabuľky boli extrahované unikátne entity (domácnosti, osoby, vozidlá, adresy, kontakty, geografia a dátumy).Použili sme techniku SCD Typ 0 (Static), kde sú dáta historicky fixné, čo pre tento typ datasetu je bhodné. Každému záznamu sme pridelili technický kľúč (Surrogate Key) pomocou funkcie ROW_NUMBER().
+```sql
+-- dimenzia adries
+CREATE OR REPLACE TABLE dim_address AS (
+    SELECT DISTINCT
+        ROW_NUMBER() OVER (ORDER BY ADDRESS_ID) AS ADDRESS_KEY,
+        ADDRESS_ID,
+        FULL_ADDRESS,
+        
+        -- rozdelenie FULL_ADDRESS na STREET_NUMBER a STREET_NAME
+        LEFT(FULL_ADDRESS, CHARINDEX(' ', FULL_ADDRESS) - 1) AS STREET_NUMBER,
+        SUBSTR(FULL_ADDRESS, CHARINDEX(' ', FULL_ADDRESS) + 1) AS STREET_NAME,
+        
+        ADDRESS_LINE,
+        CITY,
+        STATE,
+        ZIP5,
+        ZIP4,
+        COUNTY_NAME,
+        LATITUDE,
+        LONGITUDE,
+        ADDRESS_TYPE_INDICATOR,
+        CARRIER_ROUTE,
+        SCF_CODE,
+        DELIVERY_POINT_BAR_CODE,
+        DPV_INDICATOR,
+        LENGTH_OF_RESIDENCE
+        
+    FROM alesco_auto_staging
+    WHERE ADDRESS_ID IS NOT NULL
+        AND CHARINDEX(' ', FULL_ADDRESS) > 0 -- osetrenie chybajucich medzier
+);
+
+-- kontrola
+SELECT * FROM dim_address LIMIT 10;
+DESCRIBE TABLE dim_address;
+```
+
+2. **Načítanie faktovej tabuľky a validácia**: Po naplnení dimenzií prebehlo prepojenie faktovej tabuľky prestredníctvom **JOIN** operácií, čím sme zabezpečíli referenčnú integritu modelu.
+
+
+
+
+### Transform
+V tejto fáze sme využívali: SQL funkcie na čistenie dát (napr. SUBSTR pre extrakciu ulice) a window funkcie na obohatenie faktov.
+ 1. Čistenie, deduplikácia a casting:
+ - Deduplikácia: Pomocou SELECT DISTINCT sme odstránili duplicitné záznamy osôb a vozidiel.
+ - Casting (Pretypovanie): Napr. AUTO_YEAR::INT zabezpečuje, že s rokom výroby môžeme vykonávať matematické operácie.
+ - Ošetrenie chýb: Použitie WHERE ... IS NOT NULL a logických podmienok pre validáciu formátu adries.
+
+ 2. Window Functions(Analytické funkcie): Tieto funkcie boli povinne implementované vo faktovej tabuľke na generovamie pokročilých metrík bez potreby zložitého agregovania pri dopytoch.
+```sql
+-- Window funkcie na obohatenie faktov
+    -- rank áut v domácnosti
+        RANK() OVER ( 
+            PARTITION BY s.HOUSEHOLD_ID
+            ORDER BY v.AUTO_YEAR DESC
+        ) AS VEHICLE_RANK_IN_HOUSEHOLD,
+
+    -- celkový počet vozidiel
+        COUNT(*) OVER () AS TOTAL_VEHICLES_GLOBAL,
+
+    -- priemerny vek výroby vozidiel v danom zip5 (PSČ)
+        AVG(v.AUTO_YEAR::INT) OVER (
+            PARTITION BY a.ZIP5
+        ) AS REGIONAL_AVG_YEAR
+```
 <br/>
 
 ## 4. Vizualizácia dát
