@@ -65,6 +65,8 @@ schéma typu [Star](https://en.wikipedia.org/wiki/Star_schema).
 <br/>
 
 Centrálna faktová tabuľka **fact_vehicle_ownership** obsahuje merateľné fakty o vlastníctve vozidiel (napr. *dátum registrácie*, *počet vozidiel*, *...*) a je prepojená s viacerými denormalizovanými dimenziami prostredníctvom kľúčov. Tento prístup zabezpečuje vysokú výkonnosť dotazov a jednoduchú rozšíriteľnosť modelu.
+<br/>
+<br/>
 
 Tabuľka faktov obsahuje nasledujúcich 7 dimenzií schémy:
 - **dim_vehicle**: Informácie o vozidle (VIN, rok výroby, výrobca, značka, model, trieda, typ paliva a odhadovaný nájazd).
@@ -74,6 +76,19 @@ Tabuľka faktov obsahuje nasledujúcich 7 dimenzií schémy:
 - **dim_address**: Detailná adresa (ulica, mesto, štát, PSČ, súradnice, dĺžka bývania a doručovacie kódy).
 - **dim_person**: Osobné údaje vlastníka (meno, priezvisko, titul, pohlavie a persistent ID).
 - **dim_household**: Informácie o domácnosti (odhadovaný príjem, hodnota domu, vlastníctvo/podnájom, počet vozidiel a prítomnosť detí).
+<br/>
+<br/>
+
+Prehľad dimenzií a SCD typov:
+| Dimenzia | Vzťah k tabuľke faktov | Typ SCD |
+| ------- | ----------- | ------- |
+| **dim_vehicle** | 1:N | Typ 0 |
+| **dim_contact** | 1:N | Typ 1 |
+| **dim_geography** | 1:N | Typ 0 |
+| **dim_date** | 1:N | Typ 0 |
+| **dim_address** | 1:N | Typ 1 |
+| **dim_person** | 1:N | Typ 1 |
+| **dim_household** | 1:N | Typ 1 |
 
 <br/>
 
