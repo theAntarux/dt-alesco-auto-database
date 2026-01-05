@@ -20,12 +20,10 @@ Projekt sa zameriava na analýzu vlastníctva vozidiel, preferencií spotrebite�
 Cieľom ukážky je *demonštrovať*, ako má vyzerať dokumentácia, implementácia a vizualizácie pre záverečný projekt.
 
 ## Obsah
-1. [Úvod a popis zdrojových dát]()
-<br>
--[Dátová Architektúra]()
-2. [Návrh dimenzionálneho modelu]()
-3. [ELT Process in Snowflake]()
-4. [Vizualizácia dát]()
+1. [Úvod a popis zdrojových dát](https://github.com/theAntarux/dt-alesco-auto-database?tab=readme-ov-file#1-%C3%BAvod-a-popis-zdrojov%C3%BDch-d%C3%A1t)
+2. [Návrh dimenzionálneho modelu](https://github.com/theAntarux/dt-alesco-auto-database?tab=readme-ov-file#2-n%C3%A1vrh-dimenzion%C3%A1lneho-modelu)
+3. [ELT Process in Snowflake](https://github.com/theAntarux/dt-alesco-auto-database?tab=readme-ov-file#3-elt-process-in-snowflake)
+4. [Vizualizácia dát](https://github.com/theAntarux/dt-alesco-auto-database?tab=readme-ov-file#4-vizualiz%C3%A1cia-d%C3%A1t)
 
 ## 1. Úvod a popis zdrojových dát
 Projekt analyzuje dáta o vozidlách, spotrebiteľov a geografických údajov:
