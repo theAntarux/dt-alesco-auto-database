@@ -22,7 +22,7 @@ Cieľom ukážky je *demonštrovať*, ako má vyzerať dokumentácia, implement�
 ## Obsah
 1. [Úvod a popis zdrojových dát](https://github.com/theAntarux/dt-alesco-auto-database?tab=readme-ov-file#1-%C3%BAvod-a-popis-zdrojov%C3%BDch-d%C3%A1t)
 2. [Návrh dimenzionálneho modelu](https://github.com/theAntarux/dt-alesco-auto-database?tab=readme-ov-file#2-n%C3%A1vrh-dimenzion%C3%A1lneho-modelu)
-3. [ELT Process in Snowflake](https://github.com/theAntarux/dt-alesco-auto-database?tab=readme-ov-file#3-elt-process-in-snowflake)
+3. [ELT proces v Snowflake](https://github.com/theAntarux/dt-alesco-auto-database?tab=readme-ov-file#3-elt-proces-v-snowflake)
 4. [Vizualizácia dát](https://github.com/theAntarux/dt-alesco-auto-database?tab=readme-ov-file#4-vizualiz%C3%A1cia-d%C3%A1t)
 
 ## 1. Úvod a popis zdrojových dát
@@ -32,28 +32,52 @@ Projekt analyzuje dáta o vozidlách, spotrebiteľov a geografických údajov:
 - *demografických údajov súvisiacich s automobilmi*
 
 Dáta pochádzajú z [Snowflake Marketplace](https://www.snowflake.com/en/product/features/marketplace) datasetu [**Alesco Auto Database**](https://app.snowflake.com/marketplace/listing/GZ1M6ZQEKHL).
-
-Dataset obsahuje jednu primárnu tabuľku:
-- *AUTO_DATA_SAMPLE_VIEW*
-
 <br/>
 
 ## 1.1 Dátová Architektúra
 
 ### ERD Model
-Lorem ipsum dolor sit amet consectetur adipiscing elit. Quisque faucibus ex sapien vitae pellentesque sem placerat. In id cursus mi pretium tellus duis convallis. Tempus leo eu aenean sed diam urna tempor. Pulvinar vivamus fringilla lacus nec metus bibendum egestas. Iaculis massa nisl malesuada lacinia integer nunc posuere. Ut hendrerit semper vel class aptent taciti sociosqu. Ad litora torquent per conubia nostra inceptos himenaeos.
+Dáta z datasetu sú usporiadané v relačnom modeli, ktorého štruktúra je znázornená na entitno-relačnom-diagrame. 
 
-### Dimenzionálny Model
-Lorem ipsum dolor sit amet consectetur adipiscing elit. Quisque faucibus ex sapien vitae pellentesque sem placerat. In id cursus mi pretium tellus duis convallis. Tempus leo eu aenean sed diam urna tempor. Pulvinar vivamus fringilla lacus nec metus bibendum egestas. Iaculis massa nisl malesuada lacinia integer nunc posuere. Ut hendrerit semper vel class aptent taciti sociosqu. Ad litora torquent per conubia nostra inceptos himenaeos.
+Model obsahuje jednu primárnu tabuľku:
+- *AUTO_DATA_SAMPLE_VIEW*
 
+<br/>
+
+<div align="center">
+    <img src="./img/erd_schematic_002.png" alt="ERD Model" width="250">
+    <br>
+    <em>Obrázok 1: Entitno-relačná schéma</em>
+</div>
 <br/>
 
 ## 2. Návrh dimenzionálneho modelu
-Lorem ipsum dolor sit amet consectetur adipiscing elit. Quisque faucibus ex sapien vitae pellentesque sem placerat. In id cursus mi pretium tellus duis convallis. Tempus leo eu aenean sed diam urna tempor. Pulvinar vivamus fringilla lacus nec metus bibendum egestas. Iaculis massa nisl malesuada lacinia integer nunc posuere. Ut hendrerit semper vel class aptent taciti sociosqu. Ad litora torquent per conubia nostra inceptos himenaeos.
+Na základe [Kimballovej metodológie modelovania](https://en.wikipedia.org/wiki/Kimball_lifecycle) bola pre tento projekt navrhnutá 
+schéma typu [Star](https://en.wikipedia.org/wiki/Star_schema).
+
+Štruktúra navrhnutého hviezdicového modelu je znázornená na nasledujúcom obrázku:
+
+<div align="center">
+    <img src="./img/star_schematics_003.png" alt="ERD Model" width="550">
+    <br>
+    <em>Obrázok 2: Star schéma</em>
+</div>
+<br/>
+
+Centrálna faktová tabuľka **fact_vehicle_ownership** obsahuje merateľné fakty o vlastníctve vozidiel (napr. *dátum registrácie*, *počet vozidiel*, *...*) a je prepojená s viacerými denormalizovanými dimenziami prostredníctvom kľúčov. Tento prístup zabezpečuje vysokú výkonnosť dotazov a jednoduchú rozšíriteľnosť modelu.
+
+Tabuľka faktov obsahuje nasledujúcich 7 dimenzií schémy:
+- **dim_vehicle**: Informácie o vozidle (VIN, rok výroby, výrobca, značka, model, trieda, typ paliva a odhadovaný nájazd).
+- **dim_contact**: Kontaktné údaje (persistent ID, e-mail, telefón, typy e-mailov a DNC status).
+- **dim_geography**: Geografický kontext (FIPS kódy, CBSA/MSA, census tract/block a časové pásmo).
+- **dim_date**: Hierarchia dátumu (rok, štvrťrok, mesiac, deň). Použitá pre dátum prvej a poslednej registrácie.
+- **dim_address**: Detailná adresa (ulica, mesto, štát, PSČ, súradnice, dĺžka bývania a doručovacie kódy).
+- **dim_person**: Osobné údaje vlastníka (meno, priezvisko, titul, pohlavie a persistent ID).
+- **dim_household**: Informácie o domácnosti (odhadovaný príjem, hodnota domu, vlastníctvo/podnájom, počet vozidiel a prítomnosť detí).
 
 <br/>
 
-## 3. ELT Process in Snowflake
+## 3. ELT proces v Snowflake
 Lorem ipsum dolor sit amet consectetur adipiscing elit. Quisque faucibus ex sapien vitae pellentesque sem placerat. In id cursus mi pretium tellus duis convallis. Tempus leo eu aenean sed diam urna tempor. Pulvinar vivamus fringilla lacus nec metus bibendum egestas. Iaculis massa nisl malesuada lacinia integer nunc posuere. Ut hendrerit semper vel class aptent taciti sociosqu. Ad litora torquent per conubia nostra inceptos himenaeos.
 
 <br/>
@@ -189,8 +213,6 @@ Tento graf využíva window funkciu RANK() na určenie poradového čísla auta 
     <br>
     <em>Obrázok 8: Vizualizácia 6</em>
 </div>
-<br/>
-
 <br/>
 
 ## Autori
