@@ -1,9 +1,6 @@
 name: SQL Lint
 
 on:
-  pull_request:
-    paths:
-      - 'sql/**/*.sql'
   push:
     branches:
       - main
@@ -25,3 +22,4 @@ jobs:
           config: "${{ github.workspace }}/.sqlfluff"
           paths: "sql"
           fail_on_error: "true"
+          github_base_ref: "main"
