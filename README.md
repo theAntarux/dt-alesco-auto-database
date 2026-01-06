@@ -1,7 +1,7 @@
 <div align="center">
     <p>
-        <h1> dt-alesco-auto-database </h1>
-        DT - FINAL PROJECT
+        <h1> alesco-auto-database </h1>
+        Databázové Technológie
     </p>
     <a href="https://github.com/theAntarux/dt-alesco-auto-database/actions">
         <img src="https://github.com/theAntarux/dt-alesco-auto-database/actions/workflows/sql-lint.yml/badge.svg" alt="SQL Lint"/>
@@ -15,9 +15,6 @@ Tento repozitár predstavuje úkážkovú implementáciu ELT procesu v [**Snowfl
 Projekt pracuje s datasetom [**Alesco Auto Database**](https://app.snowflake.com/marketplace/listing/GZ1M6ZQEKHL), najväčšou a najpresnejšou automobilovou databázov s 
 viac ako 238 miliónmi záznamov o vozidlách (vrátane vlastníctva, pravidelne aktualizovaných z proprietárnych transakcií).
 Projekt sa zameriava na analýzu vlastníctva vozidiel, preferencií spotrebiteľov a demografických údajov súvisiacich s automobilmi.
-
-
-Cieľom ukážky je *demonštrovať*, ako má vyzerať dokumentácia, implementácia a vizualizácie pre záverečný projekt.
 
 ## Obsah
 1. [Úvod a popis zdrojových dát](https://github.com/theAntarux/dt-alesco-auto-database?tab=readme-ov-file#1-%C3%BAvod-a-popis-zdrojov%C3%BDch-d%C3%A1t)
@@ -102,11 +99,11 @@ Zdrojové údaje boli získané zo Snowflake Marketplace od poskytovateľa Alesc
 <br>**Zdrojový pohľad**: AUTO_DATA_SAMPLE_VIEW
 <br> **SQL príkaz pre vytvorenie staging tabuľky**:
 ```sql
--- 2. STAGING - import surových dát 
+-- STAGING - import surových dát 
 CREATE OR REPLACE TABLE alesco_auto_staging AS 
 SELECT * FROM ALESCO_AUTO_DATABASE_SAMPLE.PUBLIC.AUTO_DATA_SAMPLE_VIEW;
 
--- kontrola
+--> Kontrola
 SELECT * FROM alesco_auto_staging LIMIT 10;
 DESCRIBE TABLE alesco_auto_staging;
 ```
@@ -115,16 +112,15 @@ Vysvetlenie: Príkaz Vytvoré fyzickú kópiu dát v našom úložisku, čím za
 
 ### Load
 Fáza načítania spočívala vo vytváraný viacdimenzionálnej architektúry(**Star Schema**). Dáta sú rozdelené do dimenzií a faktovej tabuľky. Toto zahrňalo dva hlavné kroky:
-1. **Tvorba dimenzií**: Z pôvodnej tabuľky boli extrahované unikátne entity (domácnosti, osoby, vozidlá, adresy, kontakty, geografia a dátumy).Použili sme techniku SCD Typ 0 (Static), kde sú dáta historicky fixné, čo pre tento typ datasetu je bhodné. Každému záznamu sme pridelili technický kľúč (Surrogate Key) pomocou funkcie ROW_NUMBER().
+1. **Tvorba dimenzií**: Z pôvodnej tabuľky boli extrahované unikátne entity (domácnosti, osoby, vozidlá, adresy, kontakty, geografia a dátumy).Použili sme techniku SCD Typ 0 (Static), kde sú dáta historicky fixné, čo pre tento typ datasetu je vhodné. Každému záznamu sme pridelili technický kľúč (Surrogate Key) pomocou funkcie ROW_NUMBER().
 ```sql
--- dimenzia adries
+--> Tabuľka dimenzie adries
 CREATE OR REPLACE TABLE dim_address AS (
     SELECT DISTINCT
         ROW_NUMBER() OVER (ORDER BY ADDRESS_ID) AS ADDRESS_KEY,
         ADDRESS_ID,
         FULL_ADDRESS,
         
-        -- rozdelenie FULL_ADDRESS na STREET_NUMBER a STREET_NAME
         LEFT(FULL_ADDRESS, CHARINDEX(' ', FULL_ADDRESS) - 1) AS STREET_NUMBER,
         SUBSTR(FULL_ADDRESS, CHARINDEX(' ', FULL_ADDRESS) + 1) AS STREET_NAME,
         
@@ -144,11 +140,10 @@ CREATE OR REPLACE TABLE dim_address AS (
         LENGTH_OF_RESIDENCE
         
     FROM alesco_auto_staging
-    WHERE ADDRESS_ID IS NOT NULL
-        AND CHARINDEX(' ', FULL_ADDRESS) > 0 -- osetrenie chybajucich medzier
+    WHERE ADDRESS_ID IS NOT NULL AND CHARINDEX(' ', FULL_ADDRESS) > 0
 );
 
--- kontrola
+--> Kontrola
 SELECT * FROM dim_address LIMIT 10;
 DESCRIBE TABLE dim_address;
 ```
@@ -167,17 +162,18 @@ V tejto fáze sme využívali: SQL funkcie na čistenie dát (napr. SUBSTR pre e
 
  2. Window Functions(Analytické funkcie): Tieto funkcie boli povinne implementované vo faktovej tabuľke na generovamie pokročilých metrík bez potreby zložitého agregovania pri dopytoch.
 ```sql
--- Window funkcie na obohatenie faktov
-    -- rank áut v domácnosti
+--> Window funkcie na obohatenie faktov:
+
+    --> rank áut v domácnosti:
         RANK() OVER ( 
             PARTITION BY s.HOUSEHOLD_ID
             ORDER BY v.AUTO_YEAR DESC
         ) AS VEHICLE_RANK_IN_HOUSEHOLD,
 
-    -- celkový počet vozidiel
+    --> celkový počet vozidiel:
         COUNT(*) OVER () AS TOTAL_VEHICLES_GLOBAL,
 
-    -- priemerny vek výroby vozidiel v danom zip5 (PSČ)
+    --> priemerny vek výroby vozidiel v danom zip5 (PSČ):
         AVG(v.AUTO_YEAR::INT) OVER (
             PARTITION BY a.ZIP5
         ) AS REGIONAL_AVG_YEAR
