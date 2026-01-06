@@ -1,6 +1,7 @@
 USE WAREHOUSE LIZARD_WH;
 USE DATABASE DASAUTO;
 USE SCHEMA DASAUTO;
+--------------------------------------------------
 
 SELECT * FROM DASAUTO.fact_vehicle_ownership LIMIT 10;
 DESCRIBE TABLE DASAUTO.fact_vehicle_ownership;
